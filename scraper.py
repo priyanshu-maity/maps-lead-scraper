@@ -2,6 +2,7 @@ import re
 import os
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import quote_plus
 
 import yaml
 import pandas as pd
@@ -20,51 +21,31 @@ from selenium.common.exceptions import (
 from scraperlog import Logging
 
 
-class ScraperTemplate:
-    """
-    Base template for web scrapers.
-
-    This template provides common functionality for web scraping tasks including:
-    - Selenium WebDriver setup with SeleniumBase
-    - Logging infrastructure
-    - Date range handling
-    - YAML-based selector configuration
-    - Error handling and retries
-    - Data collection and storage
-    """
-
+class MapsLeadScraper:
     def __init__(self,
-                 start_date: str,
-                 end_date: str,
+                 business_type: str,
+                 location: str,
                  output_path: str,
                  logs_path: Path,
                  headless: bool = True):
-        """
-        Initialize the scraper.
 
-        Args:
-            start_date: Start date in MM-DD-YYYY format
-            end_date: End date in MM-DD-YYYY format
-            output_path: Directory path for output files
-            logs_path: Directory path for log files
-            headless: Whether to run browser in headless mode
-        """
         # Initialize logger
         self.logger: Logging = Logging(
-            script_name='scraper_name',  # TODO: Update with actual scraper name
+            script_name='maps_lead_scraper',
+            color_logs=True,
             log_dir=logs_path
         )
         self.logger.log(
-            message=f"Initializing scraper with start_date={start_date}, "
-                    f"end_date={end_date}, output_path={output_path}, "
+            message=f"Initializing scraper with business_type={business_type}, "
+                    f"location={location}, output_path={output_path}, "
                     f"headless={headless}",
             category='INFO'
         )
 
         # Core configuration
-        self.url: str = ''  # TODO: Set target URL
-        self.start_date: str = datetime.strptime(start_date, '%m-%d-%Y').strftime('%m/%d/%y')
-        self.end_date: str = datetime.strptime(end_date, '%m-%d-%Y').strftime('%m/%d/%y')
+        self.url: str = 'https://www.google.com/maps/search/' + quote_plus(f'{business_type} in {location}')
+        self.business_type: str = business_type
+        self.location: str = location
         self.output_path: str = output_path
         self.headless: bool = headless
 
@@ -77,29 +58,19 @@ class ScraperTemplate:
         # Initialize driver
         self.driver = None
 
-    def get_driver(self) -> Driver:
-        """
-        Initialize and configure the SeleniumBase WebDriver.
-
-        Returns:
-            Configured Driver instance
-
-        Raises:
-            SystemExit: If driver setup or initial page load fails
-        """
+    def get_driver(self):
         try:
             self.logger.log(
                 message="Setting up SeleniumBase Driver",
                 category='INFO'
             )
 
-            # Create persistent profile directory
             profile_path = os.path.join(os.getcwd(), 'chrome_profile')
             os.makedirs(profile_path, exist_ok=True)
 
             driver = Driver(
                 browser='chrome',
-                uc=True,  # Enable undetected-chromedriver
+                uc=True,
                 headless=self.headless,
                 user_data_dir=profile_path,
                 no_sandbox=True,
@@ -125,7 +96,6 @@ class ScraperTemplate:
             )
             raise SystemExit("Stopping scraper due to driver setup failure")
 
-        # Attempt to fetch website with retries
         self.logger.log(
             message=f"Fetching website: {self.url}",
             category='INFO'
@@ -159,20 +129,8 @@ class ScraperTemplate:
         return None
 
     def run(self):
-        """
-        Main execution method for the scraper.
-
-        Override this method with the specific scraping workflow.
-        """
         try:
             self.driver = self.get_driver()
-
-            # TODO: Implement scraping workflow
-            # Example workflow:
-            # 1. self.search_results()
-            # 2. self.collect_results()
-            # 3. self.process_data()
-            # 4. self.save_data()
 
         except Exception as e:
             self.logger.log(
@@ -193,20 +151,6 @@ class ScraperTemplate:
                          locator: tuple,
                          timeout: int = 10,
                          condition=EC.presence_of_element_located) -> WebElement:
-        """
-        Wait for an element to meet a specific condition.
-
-        Args:
-            locator: Tuple of (By.TYPE, selector_string)
-            timeout: Maximum wait time in seconds
-            condition: Expected condition to wait for
-
-        Returns:
-            WebElement once condition is met
-
-        Raises:
-            TimeoutException: If element doesn't meet condition within timeout
-        """
         try:
             element = WebDriverWait(self.driver, timeout).until(
                 condition(locator)
@@ -223,16 +167,6 @@ class ScraperTemplate:
     def safe_find_element(self,
                           locator: tuple,
                           default: str = '') -> str:
-        """
-        Safely find and extract text from an element.
-
-        Args:
-            locator: Tuple of (By.TYPE, selector_string)
-            default: Default value if element not found
-
-        Returns:
-            Element text or default value
-        """
         try:
             element = self.driver.find_element(*locator)
             return element.text.strip()
@@ -244,12 +178,6 @@ class ScraperTemplate:
             return default
 
     def save_to_csv(self, filename: str):
-        """
-        Save collected data to CSV file.
-
-        Args:
-            filename: Output filename (without path)
-        """
         if not self.data:
             self.logger.log(
                 message="No data to save",
@@ -268,29 +196,15 @@ class ScraperTemplate:
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
-        """
-        Load CSS/XPath selectors from YAML configuration file.
-
-        Returns:
-            Dictionary of selector mappings
-
-        Note:
-            Expects selectors.yaml in config/ directory with structure:
-            scraper_name:
-              selector_name: "selector_value"
-        """
         with open('selectors.yaml', 'r') as file:
             config = yaml.safe_load(file)
-            # TODO: Update with actual scraper name key
-            return config.get('scraper_name', {})
+            return config
 
 
-# Example usage
 if __name__ == "__main__":
-    # Example instantiation
-    scraper = ScraperTemplate(
-        start_date="01-01-2024",
-        end_date="01-31-2024",
+    scraper = MapsLeadScraper(
+        business_type="real estate agencies",
+        location="New York City",
         output_path="./output",
         logs_path=Path("./logs"),
         headless=True
