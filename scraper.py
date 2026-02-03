@@ -197,10 +197,12 @@ class MapsLeadScraper:
     def build_search_url(self) -> str:
         query = f"{self.business_type} in {self.location}"
         encoded_query = quote_plus(query)
+        self.url = f"https://www.google.com/maps/search/{encoded_query}"
         return self.url
 
     def open_search_page(self) -> None:
-        ...
+        self.url = self.build_search_url()
+        self.driver.get(self.url)
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
