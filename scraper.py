@@ -43,7 +43,7 @@ class MapsLeadScraper:
         )
 
         # Core configuration
-        self.url: str = 'https://www.google.com/maps/search/' + quote_plus(f'{business_type} in {location}')
+        self.url: str | None = None
         self.business_type: str = business_type
         self.location: str = location
         self.output_path: str = output_path
