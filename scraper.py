@@ -194,12 +194,12 @@ class MapsLeadScraper:
             category='INFO'
         )
 
-    def build_search_url(self):
+    def build_search_url(self) -> str:
         query = f"{self.business_type} in {self.location}"
         encoded_query = quote_plus(query)
         return self.url
 
-    def open_search_page(self):
+    def open_search_page(self) -> None:
         ...
 
     @staticmethod
