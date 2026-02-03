@@ -130,6 +130,7 @@ class MapsLeadScraper:
 
     def run(self):
         try:
+            self.build_search_url()
             self.driver = self.get_driver()
 
         except Exception as e:
