@@ -199,6 +199,9 @@ class MapsLeadScraper:
         encoded_query = quote_plus(query)
         return self.url
 
+    def open_search_page(self):
+        ...
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
