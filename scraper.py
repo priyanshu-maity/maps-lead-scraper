@@ -194,6 +194,9 @@ class MapsLeadScraper:
             category='INFO'
         )
 
+    def build_search_url(self):
+        ...
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
@@ -207,7 +210,7 @@ if __name__ == "__main__":
         location="New York City",
         output_path="./output",
         logs_path=Path("./logs"),
-        headless=True
+        headless=False
     )
 
     # Run the scraper
