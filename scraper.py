@@ -195,7 +195,7 @@ class MapsLeadScraper:
         )
 
     def build_search_url(self):
-        ...
+        query = f"{self.business_type} in {self.location}"
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
