@@ -210,6 +210,10 @@ class MapsLeadScraper:
     def get_results_container(self) -> WebElement:
         feed_xpath = self.selectors['results_feed']['xpath']
         locator = (By.XPATH, feed_xpath)
+        self.logger.log(
+            message="Locating results container",
+            category='INFO'
+        )
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
