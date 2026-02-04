@@ -243,6 +243,9 @@ class MapsLeadScraper:
         )
         links = []
 
+        for anchor in anchors:
+            href = anchor.get_attribute("href")
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
