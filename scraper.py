@@ -216,6 +216,9 @@ class MapsLeadScraper:
         )
         return self.wait_for_element(locator, timeout=15)
 
+    def scroll_results_feed(self) -> None:
+        ...
+
     def get_listing_links(self) -> list[str]:
         ...
 
