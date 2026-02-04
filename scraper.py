@@ -218,6 +218,7 @@ class MapsLeadScraper:
 
     def scroll_results_feed(self) -> None:
         feed = self.get_results_container()
+        last_height = 0
 
     def get_listing_links(self) -> list[str]:
         ...
