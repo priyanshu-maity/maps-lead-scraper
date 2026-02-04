@@ -225,7 +225,8 @@ class MapsLeadScraper:
                 "return arguments[0].scrollHeight",
                 feed
             )
-
+            if current_height == last_height:
+                break
     def get_listing_links(self) -> list[str]:
         ...
 
