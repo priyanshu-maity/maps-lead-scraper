@@ -242,6 +242,7 @@ class MapsLeadScraper:
             last_height = current_height
             time.sleep(2)
 
+
     def get_listing_links(self) -> list[str]:
         feed = self.get_results_container()
         links_xpath = self.selectors['listing_links']['xpath']
