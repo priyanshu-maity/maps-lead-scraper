@@ -207,6 +207,9 @@ class MapsLeadScraper:
 
         return self.url
 
+    def get_results(self) -> WebElement:
+        ...
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
