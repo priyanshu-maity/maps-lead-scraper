@@ -231,6 +231,7 @@ class MapsLeadScraper:
                 "arguments[0].scrollTo(0, arguments[0].scrollHeight)",
                 feed
             )
+            last_height = current_height
 
     def get_listing_links(self) -> list[str]:
         ...
