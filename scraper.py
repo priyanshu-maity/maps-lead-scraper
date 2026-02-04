@@ -220,6 +220,12 @@ class MapsLeadScraper:
         feed = self.get_results_container()
         last_height = 0
 
+        while True:
+            current_height = self.driver.execute_script(
+                "return arguments[0].scrollHeight",
+                feed
+            )
+
     def get_listing_links(self) -> list[str]:
         ...
 
