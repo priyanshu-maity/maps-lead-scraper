@@ -236,6 +236,7 @@ class MapsLeadScraper:
 
     def get_listing_links(self) -> list[str]:
         feed = self.get_results_container()
+        links_xpath = self.selectors['listing_links']['xpath']
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
