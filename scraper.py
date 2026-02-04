@@ -132,6 +132,13 @@ class MapsLeadScraper:
         try:
             self.build_search_url()
             self.driver = self.get_driver()
+            self.scroll_results_feed()
+            listing_links = self.get_listing_links()
+
+            self.logger.log(
+                message=f"Collected {len(listing_links)} listing URLs",
+                category='INFO'
+            )
 
         except Exception as e:
             self.logger.log(
