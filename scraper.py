@@ -136,9 +136,6 @@ class MapsLeadScraper:
             self.scroll_results_feed()
             listing_links = self.get_listing_links()
 
-            for link in listing_links:
-                print(link)
-
             self.logger.log(
                 message=f"Collected {len(listing_links)} listing URLs",
                 category='INFO'
@@ -259,6 +256,10 @@ class MapsLeadScraper:
             href = anchor.get_attribute("href")
             if href and href not in links:
                 links.append(href)
+
+        for link in listing_links:
+            print(link)
+
         return links
 
     @staticmethod
