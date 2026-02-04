@@ -232,6 +232,7 @@ class MapsLeadScraper:
                 feed
             )
             last_height = current_height
+            self.driver.implicitly_wait(2)
 
     def get_listing_links(self) -> list[str]:
         ...
