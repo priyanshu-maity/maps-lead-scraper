@@ -235,7 +235,7 @@ class MapsLeadScraper:
             self.driver.implicitly_wait(2)
 
     def get_listing_links(self) -> list[str]:
-        ...
+        feed = self.get_results_container()
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
