@@ -241,6 +241,7 @@ class MapsLeadScraper:
             By.XPATH,
             links_xpath
         )
+        links = []
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
