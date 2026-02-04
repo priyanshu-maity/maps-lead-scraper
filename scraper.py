@@ -227,6 +227,11 @@ class MapsLeadScraper:
             )
             if current_height == last_height:
                 break
+            self.driver.execute_script(
+                "arguments[0].scrollTo(0, arguments[0].scrollHeight)",
+                feed
+            )
+
     def get_listing_links(self) -> list[str]:
         ...
 
