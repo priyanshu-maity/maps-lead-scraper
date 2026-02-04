@@ -209,7 +209,7 @@ class MapsLeadScraper:
 
     def get_results_container(self) -> WebElement:
         feed_xpath = self.selectors['results_feed']['xpath']
-
+        locator = (By.XPATH, feed_xpath)
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
