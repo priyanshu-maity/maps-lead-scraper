@@ -245,8 +245,8 @@ class MapsLeadScraper:
 
         for anchor in anchors:
             href = anchor.get_attribute("href")
-        if href and href not in links:
-            links.append(href)
+            if href and href not in links:
+                links.append(href)
         return links
 
     @staticmethod
