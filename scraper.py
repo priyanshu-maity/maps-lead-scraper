@@ -136,6 +136,9 @@ class MapsLeadScraper:
             self.scroll_results_feed()
             listing_links = self.get_listing_links()
 
+            for link in listing_links:
+                print(link)
+
             self.logger.log(
                 message=f"Collected {len(listing_links)} listing URLs",
                 category='INFO'
