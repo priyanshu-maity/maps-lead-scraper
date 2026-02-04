@@ -1,5 +1,6 @@
 import re
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -239,7 +240,7 @@ class MapsLeadScraper:
                 feed
             )
             last_height = current_height
-            self.driver.implicitly_wait(2)
+            time.sleep(2)
 
     def get_listing_links(self) -> list[str]:
         feed = self.get_results_container()
