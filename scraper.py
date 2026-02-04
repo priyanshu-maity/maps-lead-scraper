@@ -214,6 +214,7 @@ class MapsLeadScraper:
             message="Locating results container",
             category='INFO'
         )
+        return self.wait_for_element(locator, timeout=15)
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
