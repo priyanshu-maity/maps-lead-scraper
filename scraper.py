@@ -216,6 +216,9 @@ class MapsLeadScraper:
         )
         return self.wait_for_element(locator, timeout=15)
 
+    def get_listing_links(self) -> list[str]:
+        ...
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
