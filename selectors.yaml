@@ -1,2 +1,4 @@
 results_feed:
   xpath: '//div[@role="feed" and contains(@aria-label, "Results")]'
+listing_links:
+  xpath: './/a[contains(@href, "/maps/place/")]'
