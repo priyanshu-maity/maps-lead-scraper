@@ -320,7 +320,9 @@ class MapsLeadScraper:
                 )
 
     def extract_listing_parameters(self) -> dict:
-        ...
+        name = self.safe_find_element(
+            (By.XPATH, self.selectors["business_name"])
+        )
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
