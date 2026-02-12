@@ -267,9 +267,6 @@ class MapsLeadScraper:
             except NoSuchElementException:
                 continue
 
-        for link in links:
-            print(link)
-
         self.logger.log(
             message=f"Collected {len(links)} organic listing URLs",
             category="INFO"
@@ -293,7 +290,13 @@ class MapsLeadScraper:
             return False
 
     def execute_scraping_workflow(self) -> None:
-        ...
+        listing_links = self.get_listing_links()
+
+        self.logger.log(
+            message=f"Collected {len(listing_links)} listing URLs",
+            category="INFO"
+        )
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
