@@ -285,7 +285,7 @@ class MapsLeadScraper:
             )
 
             return len(sponsored_elements) > 0
-        except:
+        except Exception as e:
             self.logger.log(
                 message="Error while checking sponsored badge",
                 category="WARNING",
