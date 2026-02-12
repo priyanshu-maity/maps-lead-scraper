@@ -133,7 +133,6 @@ class MapsLeadScraper:
         try:
             self.build_search_url()
             self.driver = self.get_driver()
-            self.scroll_results_feed()
             listing_links = self.get_listing_links()
 
             self.logger.log(
@@ -216,7 +215,7 @@ class MapsLeadScraper:
         return self.url
 
     def get_results_container(self) -> WebElement:
-        feed_xpath = self.selectors['results_feed']['xpath']
+        feed_xpath = self.selectors['results_feed']
         locator = (By.XPATH, feed_xpath)
         self.logger.log(
             message="Locating results container",
@@ -242,10 +241,9 @@ class MapsLeadScraper:
             last_height = current_height
             time.sleep(2)
 
-
     def get_listing_links(self) -> list[str]:
         feed = self.get_results_container()
-        links_xpath = self.selectors['listing_links']['xpath']
+        links_xpath = self.selectors['listing_links']
         anchors = feed.find_elements(
             By.XPATH,
             links_xpath
@@ -257,10 +255,13 @@ class MapsLeadScraper:
             if href and href not in links:
                 links.append(href)
 
-        for link in listing_links:
+        for link in links:
             print(link)
 
         return links
+
+    def is_sponsored(self):
+        ...
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
