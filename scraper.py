@@ -328,6 +328,10 @@ class MapsLeadScraper:
             (By.XPATH, self.selectors["business_type"])
         )
 
+        address = self.safe_find_element(
+            (By.XPATH, self.selectors["business_address"])
+        )
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
