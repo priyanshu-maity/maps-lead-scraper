@@ -299,7 +299,7 @@ class MapsLeadScraper:
         for index, url in enumerate(links, start=1):
             try:
                 self.logger.log(
-                    message=f"Opening listing {index}/{len(listing_links)}",
+                    message=f"Opening listing {index}/{len(links)}: {url}",
                     category="INFO"
                 )
                 self.driver.get(url)
