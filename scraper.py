@@ -258,10 +258,16 @@ class MapsLeadScraper:
         for link in links:
             print(link)
 
+
         return links
 
-    def is_sponsored(self):
-        ...
+    def is_sponsored(self, element: WebElement) -> bool:
+        try:
+            text_content = element.text.lower()
+            print(text_content)
+        except:
+            pass
+
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
