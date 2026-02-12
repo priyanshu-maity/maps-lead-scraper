@@ -310,8 +310,14 @@ class MapsLeadScraper:
                 )
 
                 listing_data = self.extract_listing_parameters()
-            except:
-                ...
+                if listing_data:
+                    self.data.append(listing_data)
+            except Exception as e:
+                self.logger.log(
+                    message=f"Failed scraping listing: {url}",
+                    category="ERROR",
+                    exception=e
+                )
 
     def extract_listing_parameters(self) -> dict:
         ...
