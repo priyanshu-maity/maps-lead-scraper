@@ -303,6 +303,11 @@ class MapsLeadScraper:
                     category="INFO"
                 )
                 self.driver.get(url)
+
+                self.wait_for_element(
+                    (By.XPATH, self.selectors['business_name']),
+                    timeout=15
+                )
             except:
                 ...
 
