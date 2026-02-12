@@ -260,7 +260,7 @@ class MapsLeadScraper:
 
                 href = anchor.get_attribute("href")
 
-                if href and href not in links:
+                if href and href not in seen:
                     seen.add(href)
                     links.append(href)
 
@@ -292,7 +292,8 @@ class MapsLeadScraper:
             )
             return False
 
-
+    def execute_scraping_workflow(self) -> None:
+        ...
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
