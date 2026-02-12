@@ -297,6 +297,11 @@ class MapsLeadScraper:
             category="INFO"
         )
 
+        self.scrape_all_listings(listing_links)
+
+    def scrape_all_listings(self, links: list[str]) -> None:
+        ...
+
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
