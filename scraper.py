@@ -335,6 +335,16 @@ class MapsLeadScraper:
         phone = self.safe_find_element(
             (By.XPATH, self.selectors["business_phone"])
         )
+        website = ""
+        try:
+            element = self.driver.find_element(
+                By.XPATH,
+                self.selectors["business_website"]
+            )
+            website = element.get_attribute("href") or ""
+        except NoSuchElementException:
+            pass
+
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
