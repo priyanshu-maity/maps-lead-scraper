@@ -324,7 +324,7 @@ class MapsLeadScraper:
             (By.XPATH, self.selectors["business_name"])
         )
 
-        type = self.safe_find_element(
+        business_type = self.safe_find_element(
             (By.XPATH, self.selectors["business_type"])
         )
 
