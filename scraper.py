@@ -308,8 +308,13 @@ class MapsLeadScraper:
                     (By.XPATH, self.selectors['business_name']),
                     timeout=15
                 )
+
+                listing_data = self.extract_listing_parameters()
             except:
                 ...
+
+    def extract_listing_parameters(self) -> dict:
+        ...
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
