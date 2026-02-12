@@ -1,3 +1,6 @@
 results_feed: '//div[@role="feed" and contains(@aria-label, "Results")]'
 listing_links: './/a[contains(@href, "/maps/place/")]'
 listing_containers: "ancestor::div[contains(@class,'Nv2PK')]"
+sponsor_badge: ".//h1[@aria-label='Sponsored']"
+business_name: "//h1[contains(@class,'DUwDvf')]"
+
