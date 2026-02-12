@@ -255,11 +255,15 @@ class MapsLeadScraper:
         for anchor in anchors:
             try:
                 listing_container = anchor.find_element(By.XPATH, self.selectors['listing_containers'])
-                self.is_sponsored(listing_container)
+                if self.is_sponsored(listing_container):
+                    continue
 
                 href = anchor.get_attribute("href")
+
                 if href and href not in links:
+                    seen.add(href)
                     links.append(href)
+
             except NoSuchElementException:
                 continue
 
