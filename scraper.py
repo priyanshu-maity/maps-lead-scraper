@@ -281,9 +281,8 @@ class MapsLeadScraper:
         try:
             sponsored_elements = element.find_elements(
                 By.XPATH,
-                self.selectors['sponsored_badge']
+                self.selectors['sponsor_badge']
             )
-
             return len(sponsored_elements) > 0
         except Exception as e:
             self.logger.log(
