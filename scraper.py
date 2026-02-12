@@ -296,7 +296,15 @@ class MapsLeadScraper:
         self.scrape_all_listings(listing_links)
 
     def scrape_all_listings(self, links: list[str]) -> None:
-        ...
+        for index, url in enumerate(links, start=1):
+            try:
+                self.logger.log(
+                    message=f"Opening listing {index}/{len(listing_links)}",
+                    category="INFO"
+                )
+                self.driver.get(url)
+            except:
+                ...
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
