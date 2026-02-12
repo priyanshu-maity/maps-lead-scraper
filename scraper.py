@@ -345,6 +345,13 @@ class MapsLeadScraper:
         except NoSuchElementException:
             pass
 
+        return {
+            "business_name": name,
+            "business_type": business_type,
+            "address": address,
+            "phone": phone,
+            "website": website
+        }
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
