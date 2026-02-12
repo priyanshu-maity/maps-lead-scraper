@@ -6,6 +6,7 @@ business_name: "//h1[contains(@class,'DUwDvf')]"
 business_type: "//button[contains(@class,'DkEaL')]"
 business_address: "//button[@data-item-id='address']"
 business_phone: "//button[contains(@data-item-id,'phone')]"
+business_website: "//a[@data-item-id='authority']"
 
 
 
