@@ -4,7 +4,7 @@ listing_containers: "ancestor::div[contains(@class,'Nv2PK')]"
 sponsor_badge: ".//h1[@aria-label='Sponsored']"
 business_name: "//h1[contains(@class,'DUwDvf')]"
 business_type: "//button[contains(@class,'DkEaL')]"
-business_address: "//button[@data-item-id='address']"
+business_address: "//button[@data-item-id='address']//div[contains(@class,'fontBodyMedium')]"
 business_phone: "//button[contains(@data-item-id,'phone')]"
 business_website: "//a[@data-item-id='authority']"
 

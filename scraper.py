@@ -311,6 +311,7 @@ class MapsLeadScraper:
 
                 listing_data = self.extract_listing_parameters()
                 if listing_data:
+                    print(listing_data)
                     self.data.append(listing_data)
             except Exception as e:
                 self.logger.log(
