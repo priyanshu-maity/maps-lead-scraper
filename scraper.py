@@ -275,8 +275,12 @@ class MapsLeadScraper:
 
     def is_sponsored(self, element: WebElement) -> bool:
         try:
-            text_content = element.text.lower()
-            print(text_content)
+            sponsored_elements = element.find_elements(
+                By.XPATH,
+                self.selectors['sponsored_badge']
+            )
+
+            return len(sponsored_elements) > 0
         except:
             pass
 
