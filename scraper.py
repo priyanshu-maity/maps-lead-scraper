@@ -148,6 +148,7 @@ class MapsLeadScraper:
             )
             raise
         finally:
+            self.writer.flush()
             if self.driver:
                 self.driver.quit()
                 self.logger.log(
