@@ -28,15 +28,14 @@ class GSheetBatchWriter:
         self.workbook: Spreadsheet = self._connect()
         self.worksheets: list[Worksheet] = self.workbook.worksheets()
         self.worksheet: Worksheet | None = None
-        self.data: list[list[Any]] = []
+        self.data: list[list[Any]] = [self.headers]
 
         self._keys_cache: set[tuple[Any, ...]] = set()
         self._dedupe_indexes: list[int] | None = None
 
-        self._create_worksheet()
         self._check_dedupe_cols()
         self._set_dedupe_indexes()
-        self._check_fill_headers()
+        self._create_worksheet()
         self._build_existing_keys_cache()
 
     def _connect(self) -> Spreadsheet:
@@ -56,10 +55,6 @@ class GSheetBatchWriter:
             self.sheet_name = f'{self.sheet_name} ({counter})'
 
         self.worksheet = self.workbook.add_worksheet(title=self.sheet_name, rows=0, cols=len(self.headers), index=self.insert_at)
-
-    def _check_fill_headers(self):
-        if not self.worksheet.get_all_values():
-            self.worksheet.append_row(self.headers)
 
     def _check_dedupe_cols(self):
         if self.dedupe_on:
