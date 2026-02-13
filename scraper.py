@@ -79,8 +79,9 @@ class MapsLeadScraper:
                 user_data_dir=profile_path,
                 no_sandbox=True,
                 disable_gpu=True,
-                incognito=False,
-                page_load_strategy='normal'
+                incognito=True,
+                page_load_strategy='eager',
+                block_images=True,
             )
 
             driver.set_page_load_timeout(30)
