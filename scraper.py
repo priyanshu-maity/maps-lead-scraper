@@ -20,13 +20,14 @@ from selenium.common.exceptions import (
 )
 
 from scraperlog import Logging
+from batch_writer import GSheetBatchWriter
 
 
 class MapsLeadScraper:
     def __init__(self,
                  business_type: str,
                  location: str,
-                 output_path: str,
+                 sheet_id: str,
                  logs_path: Path,
                  headless: bool = True):
 
@@ -38,7 +39,7 @@ class MapsLeadScraper:
         )
         self.logger.log(
             message=f"Initializing scraper with business_type={business_type}, "
-                    f"location={location}, output_path={output_path}, "
+                    f"location={location}, sheet_id={sheet_id}, "
                     f"headless={headless}",
             category='INFO'
         )
@@ -47,14 +48,16 @@ class MapsLeadScraper:
         self.url: str | None = None
         self.business_type: str = business_type
         self.location: str = location
-        self.output_path: str = output_path
+        self.sheet_id: str = sheet_id
         self.headless: bool = headless
+
+        self.fields = ['business_name', 'business_type', 'address', 'phone', 'website', 'email', 'maps_url']
 
         # Load selectors from YAML configuration
         self.selectors: dict[str, str] = self.load_selectors()
 
         # Data storage
-        self.data: list[dict] = []
+        self.writer = GSheetBatchWriter('creds.json', self.sheet_id, headers=self.fields, dedupe_on=['maps_url'])
 
         # Initialize driver
         self.driver = None
@@ -133,8 +136,8 @@ class MapsLeadScraper:
         try:
             self.build_search_url()
             self.driver = self.get_driver()
-
             self.execute_scraping_workflow()
+            self.writer.flush()
 
         except Exception as e:
             self.logger.log(
@@ -180,23 +183,6 @@ class MapsLeadScraper:
                 category='WARNING'
             )
             return default
-
-    def save_to_csv(self, filename: str):
-        if not self.data:
-            self.logger.log(
-                message="No data to save",
-                category='WARNING'
-            )
-            return
-
-        output_file = os.path.join(self.output_path, filename)
-        df = pd.DataFrame(self.data)
-        df.to_csv(output_file, index=False)
-
-        self.logger.log(
-            message=f"Data saved to {output_file}",
-            category='INFO'
-        )
 
     def build_search_url(self) -> str:
         query = f"{self.business_type} in {self.location}"
@@ -297,6 +283,7 @@ class MapsLeadScraper:
 
     def scrape_all_listings(self, links: list[str]) -> None:
         for index, url in enumerate(links, start=1):
+            listing_data = {"maps_url": url}
             try:
                 self.logger.log(
                     message=f"Opening listing {index}/{len(links)}: {url}",
@@ -309,10 +296,9 @@ class MapsLeadScraper:
                     timeout=15
                 )
 
-                listing_data = self.extract_listing_parameters()
-                if listing_data:
-                    print(listing_data)
-                    self.data.append(listing_data)
+                listing_data.update(self.extract_listing_parameters())
+                self.writer.dump(listing_data)
+
             except Exception as e:
                 self.logger.log(
                     message=f"Failed scraping listing: {url}",
@@ -363,9 +349,9 @@ class MapsLeadScraper:
 
 if __name__ == "__main__":
     scraper = MapsLeadScraper(
-        business_type="real estate agencies",
+        business_type="pet shop",
         location="New York City",
-        output_path="./output",
+        sheet_id="137B0pNDLA6vIa6J7IHxlZoMmk8Pe1tKAfcHMprC-xrc",
         logs_path=Path("./logs"),
         headless=False
     )
