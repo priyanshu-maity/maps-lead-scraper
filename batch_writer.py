@@ -13,6 +13,7 @@ class GSheetBatchWriter:
             sheet_id: str,
             headers: list[str],
             insert_at: int = 0,
+            sheet_name: str = datetime.now().strftime('%Y-%m-%d'),
             dedupe_on: list[str] | None = None,
             batch_size: int = 50,
     ):
@@ -20,17 +21,19 @@ class GSheetBatchWriter:
         self.sheet_id: str = sheet_id
         self.headers: list[str] = headers
         self.insert_at: int = insert_at
+        self.sheet_name: str = sheet_name
         self.dedupe_on: list[str] | None = dedupe_on
         self.batch_size: int = batch_size
 
         self.workbook: Spreadsheet = self._connect()
         self.worksheets: list[Worksheet] = self.workbook.worksheets()
-        self.worksheet: Worksheet = self.worksheets[insert_at]
+        self.worksheet: Worksheet | None = None
         self.data: list[list[Any]] = []
 
         self._keys_cache: set[tuple[Any, ...]] = set()
         self._dedupe_indexes: list[int] | None = None
 
+        self._create_worksheet()
         self._check_dedupe_cols()
         self._set_dedupe_indexes()
         self._check_fill_headers()
@@ -43,6 +46,16 @@ class GSheetBatchWriter:
 
         workbook: Spreadsheet = client.open_by_key(self.sheet_id)
         return workbook
+
+    def _create_worksheet(self):
+        sheet_titles = [ws.title for ws in self.worksheets]
+        if self.sheet_name in sheet_titles:
+            counter = 2
+            while f'{self.sheet_name} ({counter})' in sheet_titles:
+                counter += 1
+            self.sheet_name = f'{self.sheet_name} ({counter})'
+
+        self.worksheet = self.workbook.add_worksheet(title=self.sheet_name, rows=0, cols=len(self.headers), index=self.insert_at)
 
     def _check_fill_headers(self):
         if not self.worksheet.get_all_values():
