@@ -54,7 +54,7 @@ class GSheetBatchWriter:
                 counter += 1
             self.sheet_name = f'{self.sheet_name} ({counter})'
 
-        self.worksheet = self.workbook.add_worksheet(title=self.sheet_name, rows=0, cols=len(self.headers), index=self.insert_at)
+        self.worksheet = self.workbook.add_worksheet(title=self.sheet_name, rows=1, cols=len(self.headers), index=self.insert_at)
 
     def _check_dedupe_cols(self):
         if self.dedupe_on:
