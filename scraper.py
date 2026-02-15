@@ -251,18 +251,22 @@ class MapsLeadScraper:
             )
             for anchor in anchors:
                 try:
-                    listing_container = anchor.find_element(By.XPATH, self.selectors['listing_containers'])
+                    listing_container = anchor.find_element(
+                        By.XPATH,
+                        self.selectors['listing_containers']
+                    )
                     if self.is_sponsored(listing_container):
                         continue
 
                     href = anchor.get_attribute("href")
 
-                    if href and href not in seen:
-                        seen.add(href)
-                        links.append(href)
+                    if href:
+                        links.add(href)
 
                 except NoSuchElementException:
                     continue
+
+            current_count = len(links)
 
         self.logger.log(
             message=f"Collected {len(links)} organic listing URLs",
