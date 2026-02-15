@@ -237,30 +237,32 @@ class MapsLeadScraper:
             "website": website
         }
 
-    def get_listing_links(self) -> list[str]:
+    def get_listing_links(self, limit: int = 100) -> list[str]:
         feed = self.get_results_container()
         links_xpath = self.selectors['listing_links']
-        anchors = feed.find_elements(
-            By.XPATH,
-            links_xpath
-        )
 
         links: set[str] = set()
+        last_count = 0
 
-        for anchor in anchors:
-            try:
-                listing_container = anchor.find_element(By.XPATH, self.selectors['listing_containers'])
-                if self.is_sponsored(listing_container):
+        while len(links) < limit:
+            anchors = feed.find_elements(
+                By.XPATH,
+                links_xpath
+            )
+            for anchor in anchors:
+                try:
+                    listing_container = anchor.find_element(By.XPATH, self.selectors['listing_containers'])
+                    if self.is_sponsored(listing_container):
+                        continue
+
+                    href = anchor.get_attribute("href")
+
+                    if href and href not in seen:
+                        seen.add(href)
+                        links.append(href)
+
+                except NoSuchElementException:
                     continue
-
-                href = anchor.get_attribute("href")
-
-                if href and href not in seen:
-                    seen.add(href)
-                    links.append(href)
-
-            except NoSuchElementException:
-                continue
 
         self.logger.log(
             message=f"Collected {len(links)} organic listing URLs",
