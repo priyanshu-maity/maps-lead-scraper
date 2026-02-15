@@ -267,11 +267,22 @@ class MapsLeadScraper:
                     continue
 
             current_count = len(links)
+            self.logger.log(
+                message=f"Collected {current_count} organic listing URLs",
+                category="INFO"
+            )
 
-        self.logger.log(
-            message=f"Collected {len(links)} organic listing URLs",
-            category="INFO"
-        )
+            if current_count >= limit:
+                break
+            if current_count == last_count:
+                self.logger.log(
+                    message="No new links loaded after scrolling. Stopping.",
+                    category="WARNING"
+                )
+                break
+
+            last_count = current_count
+            self.scroll_page(feed)
 
         return links
 
