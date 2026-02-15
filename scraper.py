@@ -237,7 +237,7 @@ class MapsLeadScraper:
             "website": website
         }
 
-    def get_listing_links(self, limit: int = 100) -> list[str]:
+    def get_listing_links(self, limit: int = 100) -> set[str]:
         feed = self.get_results_container()
         links_xpath = self.selectors['listing_links']
 
@@ -294,6 +294,9 @@ class MapsLeadScraper:
             category='INFO'
         )
         return self.wait_for_element(locator, timeout=15)
+
+    def scroll_page(self, feed: WebElement) -> None:
+        ...
 
     def is_sponsored(self, element: WebElement) -> bool:
         try:
