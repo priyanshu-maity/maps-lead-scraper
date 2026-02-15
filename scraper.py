@@ -310,6 +310,24 @@ class MapsLeadScraper:
             feed
         )
 
+        try:
+            WebDriverWait(self.driver, 15).until(
+                lambda d: d.execute_script(
+                    "return arguments[0].scrollHeight", feed
+                ) > previous_height
+            )
+
+            self.logger.log(
+                message="New listings loaded after scrolling.",
+                category="INFO"
+            )
+
+        except TimeoutException:
+            self.logger.log(
+                message="Scroll timeout: No additional listings loaded.",
+                category="WARNING"
+            )
+
     def is_sponsored(self, element: WebElement) -> bool:
         try:
             sponsored_elements = element.find_elements(
