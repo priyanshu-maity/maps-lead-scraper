@@ -296,7 +296,14 @@ class MapsLeadScraper:
         return self.wait_for_element(locator, timeout=15)
 
     def scroll_page(self, feed: WebElement) -> None:
-        ...
+        self.logger.log(
+            message="Scrolling results feed...",
+            category="INFO"
+        )
+
+        previous_height = self.driver.execute_script(
+            "return arguments[0].scrollHeight", feed
+        )
 
     def is_sponsored(self, element: WebElement) -> bool:
         try:
