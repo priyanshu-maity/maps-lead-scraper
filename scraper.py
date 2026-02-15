@@ -115,7 +115,7 @@ class MapsLeadScraper:
                 no_sandbox=True,
                 disable_gpu=True,
                 incognito=True,
-                page_load_strategy='eager',
+                page_load_strategy='normal',
                 block_images=True,
             )
 
@@ -178,7 +178,7 @@ class MapsLeadScraper:
 
         self.scrape_all_listings(listing_links)
 
-    def scrape_all_listings(self, links: list[str]) -> None:
+    def scrape_all_listings(self, links: set[str]) -> None:
         for index, url in enumerate(links, start=1):
             listing_data = {"maps_url": url}
             try:
@@ -204,21 +204,30 @@ class MapsLeadScraper:
                 )
 
     def extract_listing_parameters(self) -> dict:
-        name = self.safe_find_element(
-            (By.XPATH, self.selectors["business_name"])
-        )
+        try:
+            name = self.safe_find_element(
+                (By.XPATH, self.selectors["business_name"])
+            )
 
-        business_type = self.safe_find_element(
-            (By.XPATH, self.selectors["business_type"])
-        )
+            business_type = self.safe_find_element(
+                (By.XPATH, self.selectors["business_type"])
+            )
 
-        address = self.safe_find_element(
-            (By.XPATH, self.selectors["business_address"])
-        )
+            address = self.safe_find_element(
+                (By.XPATH, self.selectors["business_address"])
+            )
 
-        phone = self.safe_find_element(
-            (By.XPATH, self.selectors["business_phone"])
-        )
+            phone = self.safe_find_element(
+                (By.XPATH, self.selectors["business_phone"])
+            )
+        except Exception as e:
+            self.logger.log(
+                message="Error extracting listing parameters",
+                category="ERROR",
+                exception=e
+            )
+            name = business_type = address = phone = ""
+
         website = ""
         try:
             element = self.driver.find_element(
@@ -226,8 +235,12 @@ class MapsLeadScraper:
                 self.selectors["business_website"]
             )
             website = element.get_attribute("href") or ""
-        except NoSuchElementException:
-            pass
+        except NoSuchElementException as e:
+            self.logger.log(
+                message=f"Failed scraping website: {url}",
+                category="WARNING",
+                exception=e
+            )
 
         return {
             "business_name": name,
