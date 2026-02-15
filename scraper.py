@@ -246,7 +246,6 @@ class MapsLeadScraper:
         )
 
         links = []
-        seen = set()
 
         for anchor in anchors:
             try:
@@ -278,24 +277,6 @@ class MapsLeadScraper:
             category='INFO'
         )
         return self.wait_for_element(locator, timeout=15)
-
-    def scroll_results_feed(self) -> None:
-        feed = self.get_results_container()
-        last_height = 0
-
-        while True:
-            current_height = self.driver.execute_script(
-                "return arguments[0].scrollHeight",
-                feed
-            )
-            if current_height == last_height:
-                break
-            self.driver.execute_script(
-                "arguments[0].scrollTo(0, arguments[0].scrollHeight)",
-                feed
-            )
-            last_height = current_height
-            time.sleep(2)
 
     def is_sponsored(self, element: WebElement) -> bool:
         try:
