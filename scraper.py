@@ -305,6 +305,11 @@ class MapsLeadScraper:
             "return arguments[0].scrollHeight", feed
         )
 
+        self.driver.execute_script(
+            "arguments[0].scrollTop = arguments[0].scrollHeight",
+            feed
+        )
+
     def is_sponsored(self, element: WebElement) -> bool:
         try:
             sponsored_elements = element.find_elements(
