@@ -62,6 +62,41 @@ class MapsLeadScraper:
         # Initialize driver
         self.driver = None
 
+    def run(self):
+        try:
+            self.build_search_url()
+            self.driver = self.get_driver()
+            self.execute_scraping_workflow()
+            self.writer.flush()
+
+        except Exception as e:
+            self.logger.log(
+                message="Critical error in main execution flow",
+                category='CRITICAL',
+                exception=e
+            )
+            raise
+        finally:
+            self.writer.flush()
+            if self.driver:
+                self.driver.quit()
+                self.logger.log(
+                    message="Driver closed successfully",
+                    category='INFO'
+                )
+
+    def build_search_url(self) -> str:
+        query = f"{self.business_type} in {self.location}"
+        encoded_query = quote_plus(query)
+        self.url = f"https://www.google.com/maps/search/{encoded_query}"
+
+        self.logger.log(
+            message=f"Built search URL: {self.url}",
+            category="DEBUG"
+        )
+
+        return self.url
+
     def get_driver(self):
         try:
             self.logger.log(
@@ -133,146 +168,6 @@ class MapsLeadScraper:
 
         return None
 
-    def run(self):
-        try:
-            self.build_search_url()
-            self.driver = self.get_driver()
-            self.execute_scraping_workflow()
-            self.writer.flush()
-
-        except Exception as e:
-            self.logger.log(
-                message="Critical error in main execution flow",
-                category='CRITICAL',
-                exception=e
-            )
-            raise
-        finally:
-            self.writer.flush()
-            if self.driver:
-                self.driver.quit()
-                self.logger.log(
-                    message="Driver closed successfully",
-                    category='INFO'
-                )
-
-    def wait_for_element(self,
-                         locator: tuple,
-                         timeout: int = 10,
-                         condition=EC.presence_of_element_located) -> WebElement:
-        try:
-            element = WebDriverWait(self.driver, timeout).until(
-                condition(locator)
-            )
-            return element
-        except TimeoutException as e:
-            self.logger.log(
-                message=f"Timeout waiting for element: {locator}",
-                category='ERROR',
-                exception=e
-            )
-            raise
-
-    def safe_find_element(self,
-                          locator: tuple,
-                          default: str = '') -> str:
-        try:
-            element = self.driver.find_element(*locator)
-            return element.text.strip()
-        except NoSuchElementException:
-            self.logger.log(
-                message=f"Element not found: {locator}. Using default: '{default}'",
-                category='WARNING'
-            )
-            return default
-
-    def build_search_url(self) -> str:
-        query = f"{self.business_type} in {self.location}"
-        encoded_query = quote_plus(query)
-        self.url = f"https://www.google.com/maps/search/{encoded_query}"
-
-        self.logger.log(
-            message=f"Built search URL: {self.url}",
-            category="DEBUG"
-        )
-
-        return self.url
-
-    def get_results_container(self) -> WebElement:
-        feed_xpath = self.selectors['results_feed']
-        locator = (By.XPATH, feed_xpath)
-        self.logger.log(
-            message="Locating results container",
-            category='INFO'
-        )
-        return self.wait_for_element(locator, timeout=15)
-
-    def scroll_results_feed(self) -> None:
-        feed = self.get_results_container()
-        last_height = 0
-
-        while True:
-            current_height = self.driver.execute_script(
-                "return arguments[0].scrollHeight",
-                feed
-            )
-            if current_height == last_height:
-                break
-            self.driver.execute_script(
-                "arguments[0].scrollTo(0, arguments[0].scrollHeight)",
-                feed
-            )
-            last_height = current_height
-            time.sleep(2)
-
-    def get_listing_links(self) -> list[str]:
-        feed = self.get_results_container()
-        links_xpath = self.selectors['listing_links']
-        anchors = feed.find_elements(
-            By.XPATH,
-            links_xpath
-        )
-
-        links = []
-        seen = set()
-
-        for anchor in anchors:
-            try:
-                listing_container = anchor.find_element(By.XPATH, self.selectors['listing_containers'])
-                if self.is_sponsored(listing_container):
-                    continue
-
-                href = anchor.get_attribute("href")
-
-                if href and href not in seen:
-                    seen.add(href)
-                    links.append(href)
-
-            except NoSuchElementException:
-                continue
-
-        self.logger.log(
-            message=f"Collected {len(links)} organic listing URLs",
-            category="INFO"
-        )
-
-        return links
-
-    def is_sponsored(self, element: WebElement) -> bool:
-        try:
-            sponsored_elements = element.find_elements(
-                By.XPATH,
-                self.selectors['sponsor_badge']
-            )
-            return len(sponsored_elements) > 0
-        except Exception as e:
-            self.logger.log(
-                message="Error while checking sponsored badge",
-                category="WARNING",
-                exception=e
-            )
-            return False
-
     def execute_scraping_workflow(self) -> None:
         listing_links = self.get_listing_links()
 
@@ -341,6 +236,111 @@ class MapsLeadScraper:
             "phone": phone,
             "website": website
         }
+
+    def get_listing_links(self) -> list[str]:
+        feed = self.get_results_container()
+        links_xpath = self.selectors['listing_links']
+        anchors = feed.find_elements(
+            By.XPATH,
+            links_xpath
+        )
+
+        links = []
+        seen = set()
+
+        for anchor in anchors:
+            try:
+                listing_container = anchor.find_element(By.XPATH, self.selectors['listing_containers'])
+                if self.is_sponsored(listing_container):
+                    continue
+
+                href = anchor.get_attribute("href")
+
+                if href and href not in seen:
+                    seen.add(href)
+                    links.append(href)
+
+            except NoSuchElementException:
+                continue
+
+        self.logger.log(
+            message=f"Collected {len(links)} organic listing URLs",
+            category="INFO"
+        )
+
+        return links
+
+    def get_results_container(self) -> WebElement:
+        feed_xpath = self.selectors['results_feed']
+        locator = (By.XPATH, feed_xpath)
+        self.logger.log(
+            message="Locating results container",
+            category='INFO'
+        )
+        return self.wait_for_element(locator, timeout=15)
+
+    def scroll_results_feed(self) -> None:
+        feed = self.get_results_container()
+        last_height = 0
+
+        while True:
+            current_height = self.driver.execute_script(
+                "return arguments[0].scrollHeight",
+                feed
+            )
+            if current_height == last_height:
+                break
+            self.driver.execute_script(
+                "arguments[0].scrollTo(0, arguments[0].scrollHeight)",
+                feed
+            )
+            last_height = current_height
+            time.sleep(2)
+
+    def is_sponsored(self, element: WebElement) -> bool:
+        try:
+            sponsored_elements = element.find_elements(
+                By.XPATH,
+                self.selectors['sponsor_badge']
+            )
+            return len(sponsored_elements) > 0
+        except Exception as e:
+            self.logger.log(
+                message="Error while checking sponsored badge",
+                category="WARNING",
+                exception=e
+            )
+            return False
+
+    def safe_find_element(self,
+                          locator: tuple,
+                          default: str = '') -> str:
+        try:
+            element = self.driver.find_element(*locator)
+            return element.text.strip()
+        except NoSuchElementException:
+            self.logger.log(
+                message=f"Element not found: {locator}. Using default: '{default}'",
+                category='WARNING'
+            )
+            return default
+
+    def wait_for_element(self,
+                         locator: tuple,
+                         timeout: int = 10,
+                         condition=EC.presence_of_element_located) -> WebElement:
+        try:
+            element = WebDriverWait(self.driver, timeout).until(
+                condition(locator)
+            )
+            return element
+        except TimeoutException as e:
+            self.logger.log(
+                message=f"Timeout waiting for element: {locator}",
+                category='ERROR',
+                exception=e
+            )
+            raise
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
