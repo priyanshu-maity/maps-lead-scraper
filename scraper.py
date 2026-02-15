@@ -245,7 +245,7 @@ class MapsLeadScraper:
             links_xpath
         )
 
-        links = []
+        links: set[str] = set()
 
         for anchor in anchors:
             try:
