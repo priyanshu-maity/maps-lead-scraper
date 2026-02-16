@@ -237,7 +237,7 @@ class MapsLeadScraper:
             website = element.get_attribute("href") or ""
         except NoSuchElementException as e:
             self.logger.log(
-                message=f"Failed scraping website: {url}",
+                message=f"Failed scraping website",
                 category="WARNING",
                 exception=e
             )
