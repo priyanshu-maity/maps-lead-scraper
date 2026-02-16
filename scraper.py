@@ -181,27 +181,60 @@ class MapsLeadScraper:
     def scrape_all_listings(self, links: set[str]) -> None:
         for index, url in enumerate(links, start=1):
             listing_data = {"maps_url": url}
-            try:
-                self.logger.log(
-                    message=f"Opening listing {index}/{len(links)}: {url}",
-                    category="INFO"
-                )
-                self.driver.get(url)
+            max_retries = 3
 
-                self.wait_for_element(
-                    (By.XPATH, self.selectors['business_name']),
-                    timeout=15
-                )
+            for attempt in range(max_retries):
+                try:
+                    self.logger.log(
+                        message=f"Opening listing {index}/{len(links)} (attempt {attempt + 1}): {url}",
+                        category="INFO"
+                    )
 
-                listing_data.update(self.extract_listing_parameters())
-                self.writer.dump(listing_data)
+                    self.driver.execute_script("window.stop();")
+                    self.driver.get(url)
 
-            except Exception as e:
-                self.logger.log(
-                    message=f"Failed scraping listing: {url}",
-                    category="ERROR",
-                    exception=e
-                )
+                    WebDriverWait(self.driver, 20).until(
+                        lambda d: d.execute_script("return document.readyState") == "complete"
+                    )
+
+                    self.driver.execute_script("window.scrollTo(0, 500);")
+                    time.sleep(1)
+                    self.driver.execute_script("window.scrollTo(0, 0);")
+                    time.sleep(2)
+
+                    business_name_locator = (By.XPATH, self.selectors['business_name'])
+                    element = WebDriverWait(self.driver, 15).until(
+                        EC.presence_of_element_located(business_name_locator)
+                    )
+
+                    WebDriverWait(self.driver, 10).until(
+                        lambda d: d.find_element(*business_name_locator).text.strip() != ""
+                    )
+
+                    time.sleep(1)
+
+                    listing_data.update(self.extract_listing_parameters())
+
+                    if not listing_data.get("business_name") or listing_data["business_name"] == "":
+                        raise ValueError("Business name is empty")
+
+                    self.writer.dump(listing_data)
+                    break
+
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        self.logger.log(
+                            message=f"Attempt {attempt + 1} failed, retrying...",
+                            category="WARNING",
+                            exception=e
+                        )
+                        time.sleep(2)
+                    else:
+                        self.logger.log(
+                            message=f"Failed scraping listing after {max_retries} attempts: {url}",
+                            category="ERROR",
+                            exception=e
+                        )
 
     def extract_listing_parameters(self) -> dict:
         try:
