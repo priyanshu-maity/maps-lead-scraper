@@ -237,52 +237,60 @@ class MapsLeadScraper:
                         )
 
     def extract_listing_parameters(self) -> dict:
+        def get_text(xpath: str, attribute: str = None) -> str:
+            ...
+
         try:
-            name = self.safe_find_element(
-                (By.XPATH, self.selectors["business_name"])
+            name = get_text(self.selectors["business_name"])
+            business_type = get_texte(self.selectors["business_type"])
+            address = get_text(self.selectors["business_address"])
+            phone = get_text(self.selectors["business_phone"])
+
+            website = ""
+            try:
+                element = self.driver.find_element(By.XPATH, self.selectors["business_website"])
+                website = element.get_attribute("href") or ""
+                if not website:
+                    website = element.get_attribute("data-href") or ""
+            except NoSuchElementException:
+                pass
+
+            print({
+                "business_name": name,
+                "business_type": business_type,
+                "address": address,
+                "phone": phone,
+                "website": website
+            })
+
+            result = {
+                "business_name": name,
+                "business_type": business_type,
+                "address": address,
+                "phone": phone,
+                "website": website
+            }
+
+            self.logger.log(
+                message=f"Extracted: {result}",
+                category="DEBUG"
             )
 
-            business_type = self.safe_find_element(
-                (By.XPATH, self.selectors["business_type"])
-            )
+            return result
 
-            address = self.safe_find_element(
-                (By.XPATH, self.selectors["business_address"])
-            )
-
-            phone = self.safe_find_element(
-                (By.XPATH, self.selectors["business_phone"])
-            )
         except Exception as e:
             self.logger.log(
                 message="Error extracting listing parameters",
                 category="ERROR",
                 exception=e
             )
-            name = business_type = address = phone = ""
-
-        website = ""
-        try:
-            element = self.driver.find_element(
-                By.XPATH,
-                self.selectors["business_website"]
-            )
-            website = element.get_attribute("href") or ""
-        except NoSuchElementException as e:
-            self.logger.log(
-                message=f"Failed scraping website",
-                category="WARNING",
-                exception=e
-            )
-
-        return {
-            "business_name": name,
-            "business_type": business_type,
-            "address": address,
-            "phone": phone,
-            "website": website
-        }
-
+            return {
+                "business_name": "",
+                "business_type": "",
+                "address": "",
+                "phone": "",
+                "website": ""
+            }
     def get_listing_links(self, limit: int = 100) -> set[str]:
         feed = self.get_results_container()
         links_xpath = self.selectors['listing_links']
