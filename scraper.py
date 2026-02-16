@@ -325,52 +325,68 @@ class MapsLeadScraper:
                 "phone": "",
                 "website": ""
             }
+
     def get_listing_links(self, limit: int = 100) -> set[str]:
         feed = self.get_results_container()
         links_xpath = self.selectors['listing_links']
 
-        links: set[str] = set()
-        last_count = 0
+        self.driver.execute_script("arguments[0].scrollTop = 0", feed)
+        time.sleep(2)
 
-        while len(links) < limit:
-            anchors = feed.find_elements(
-                By.XPATH,
-                links_xpath
-            )
-            for anchor in anchors:
-                try:
-                    listing_container = anchor.find_element(
-                        By.XPATH,
-                        self.selectors['listing_containers']
-                    )
-                    if self.is_sponsored(listing_container):
+        links: set[str] = set()
+        stale_count = 0
+        max_stale = 5
+
+        while len(links) < limit and stale_count < max_stale:
+            initial_count = len(links)
+
+            try:
+                anchors = feed.find_elements(By.XPATH, links_xpath)
+
+                for anchor in anchors:
+                    try:
+                        listing_container = anchor.find_element(
+                            By.XPATH,
+                            self.selectors['listing_containers']
+                        )
+
+                        if self.is_sponsored(listing_container):
+                            continue
+
+                        href = anchor.get_attribute("href")
+                        if href and 'maps/place' in href:
+                            links.add(href)
+
+                    except Exception:
                         continue
 
-                    href = anchor.get_attribute("href")
-
-                    if href:
-                        links.add(href)
-
-                except NoSuchElementException:
-                    continue
-
-            current_count = len(links)
-            self.logger.log(
-                message=f"Collected {current_count} organic listing URLs",
-                category="INFO"
-            )
-
-            if current_count >= limit:
-                break
-            if current_count == last_count:
+                current_count = len(links)
                 self.logger.log(
-                    message="No new links loaded after scrolling. Stopping.",
-                    category="WARNING"
+                    message=f"Collected {current_count} organic listing URLs",
+                    category="INFO"
                 )
-                break
 
-            last_count = current_count
-            self.scroll_page(feed)
+                if current_count >= limit:
+                    break
+
+                if current_count == initial_count:
+                    stale_count += 1
+                    self.logger.log(
+                        message=f"No new links found. Stale count: {stale_count}/{max_stale}",
+                        category="WARNING"
+                    )
+                else:
+                    stale_count = 0
+
+                self.scroll_page(feed)
+
+            except Exception as e:
+                self.logger.log(
+                    message="Error during link collection",
+                    category="ERROR",
+                    exception=e
+                )
+                stale_count += 1
 
         return links
 
