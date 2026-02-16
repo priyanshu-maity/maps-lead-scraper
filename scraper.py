@@ -389,30 +389,26 @@ class MapsLeadScraper:
             category="INFO"
         )
 
-        previous_height = self.driver.execute_script(
-            "return arguments[0].scrollHeight", feed
-        )
+        previous_html = feed.get_attribute('innerHTML')
 
         self.driver.execute_script(
             "arguments[0].scrollTop = arguments[0].scrollHeight",
             feed
         )
 
+        time.sleep(2)
+
         try:
             WebDriverWait(self.driver, 15).until(
-                lambda d: d.execute_script(
-                    "return arguments[0].scrollHeight", feed
-                ) > previous_height
+                lambda d: feed.get_attribute('innerHTML') != previous_html
             )
-
             self.logger.log(
                 message="New listings loaded after scrolling.",
                 category="INFO"
             )
-
         except TimeoutException:
             self.logger.log(
-                message="Scroll timeout: No additional listings loaded.",
+                message="No new content loaded after scroll.",
                 category="WARNING"
             )
 
@@ -466,7 +462,6 @@ class MapsLeadScraper:
         with open('selectors.yaml', 'r') as file:
             config = yaml.safe_load(file)
             return config
-
 
 
 if __name__ == "__main__":
