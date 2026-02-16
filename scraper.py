@@ -238,7 +238,41 @@ class MapsLeadScraper:
 
     def extract_listing_parameters(self) -> dict:
         def get_text(xpath: str, attribute: str = None) -> str:
-            ...
+            for attempt in range(3):
+                try:
+                    element = self.driver.find_element(By.XPATH, xpath)
+
+                    # Method 1: Regular text
+                    text = element.text.strip()
+                    if text:
+                        return text
+
+                    # Method 2: innerText via JS
+                    text = self.driver.execute_script("return arguments[0].innerText;", element)
+                    if text and text.strip():
+                        return text.strip()
+
+                    # Method 3: textContent via JS
+                    text = self.driver.execute_script("return arguments[0].textContent;", element)
+                    if text and text.strip():
+                        return text.strip()
+
+                    # Method 4: Attribute
+                    if attribute:
+                        text = element.get_attribute(attribute)
+                        if text and text.strip():
+                            return text.strip()
+
+                    if attempt < 2:
+                        time.sleep(1)
+
+                except NoSuchElementException:
+                    if attempt < 2:
+                        time.sleep(1)
+                    else:
+                        return ""
+
+            return ""
 
         try:
             name = get_text(self.selectors["business_name"])
