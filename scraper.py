@@ -24,6 +24,7 @@ from batch_writer import GSheetBatchWriter
 
 
 class MapsLeadScraper:
+    MAX_STALE: int = 3
     def __init__(self,
                  business_type: str,
                  location: str,
@@ -326,9 +327,8 @@ class MapsLeadScraper:
 
         links: set[str] = set()
         stale_count = 0
-        max_stale = 5
 
-        while (threshold is None or len(links) < threshold) and stale_count < max_stale:
+        while (threshold is None or len(links) < threshold) and stale_count < self.MAX_STALE:
             initial_count = len(links)
 
             try:
@@ -363,7 +363,7 @@ class MapsLeadScraper:
                 if current_count == initial_count:
                     stale_count += 1
                     self.logger.log(
-                        message=f"No new links found. Stale count: {stale_count}/{max_stale}",
+                        message=f"No new links found. Stale count: {stale_count}/{self.MAX_STALE}",
                         category="WARNING"
                     )
                 else:
