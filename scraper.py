@@ -468,6 +468,7 @@ class MapsLeadScraper:
             return config
 
 
+
 if __name__ == "__main__":
     scraper = MapsLeadScraper(
         business_type="pet shop",
