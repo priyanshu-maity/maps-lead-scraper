@@ -317,7 +317,7 @@ class MapsLeadScraper:
                 "website": ""
             }
 
-    def get_listing_links(self, limit: int = 100) -> set[str]:
+    def get_listing_links(self, threshold: int | None = None) -> set[str]:
         feed = self.get_results_container()
         links_xpath = self.selectors['listing_links']
 
@@ -328,7 +328,7 @@ class MapsLeadScraper:
         stale_count = 0
         max_stale = 5
 
-        while len(links) < limit and stale_count < max_stale:
+        while (threshold is None or len(links) < threshold) and stale_count < max_stale:
             initial_count = len(links)
 
             try:
@@ -357,7 +357,7 @@ class MapsLeadScraper:
                     category="INFO"
                 )
 
-                if current_count >= limit:
+                if current_count >= threshold:
                     break
 
                 if current_count == initial_count:
