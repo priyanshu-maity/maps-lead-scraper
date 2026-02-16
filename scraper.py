@@ -108,7 +108,7 @@ class MapsLeadScraper:
             os.makedirs(profile_path, exist_ok=True)
 
             driver = Driver(
-                browser='chrome',
+                browser='edge',
                 uc=True,
                 headless=self.headless,
                 user_data_dir=profile_path,
@@ -116,7 +116,6 @@ class MapsLeadScraper:
                 disable_gpu=True,
                 incognito=True,
                 page_load_strategy='normal',
-                block_images=True,
             )
 
             driver.set_page_load_timeout(30)
@@ -276,7 +275,7 @@ class MapsLeadScraper:
 
         try:
             name = get_text(self.selectors["business_name"])
-            business_type = get_texte(self.selectors["business_type"])
+            business_type = get_text(self.selectors["business_type"])
             address = get_text(self.selectors["business_address"])
             phone = get_text(self.selectors["business_phone"])
 
@@ -288,14 +287,6 @@ class MapsLeadScraper:
                     website = element.get_attribute("data-href") or ""
             except NoSuchElementException:
                 pass
-
-            print({
-                "business_name": name,
-                "business_type": business_type,
-                "address": address,
-                "phone": phone,
-                "website": website
-            })
 
             result = {
                 "business_name": name,
