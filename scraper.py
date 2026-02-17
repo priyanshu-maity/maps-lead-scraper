@@ -24,7 +24,6 @@ from batch_writer import GSheetBatchWriter
 
 
 class MapsLeadScraper:
-    MAX_STALE: int = 3
     def __init__(self,
                  business_type: str,
                  location: str,
@@ -67,7 +66,7 @@ class MapsLeadScraper:
         try:
             self.build_search_url()
             self.driver = self.get_driver()
-            self.execute_scraping_workflow()
+            self.parse()
             self.writer.flush()
 
         except Exception as e:
@@ -168,17 +167,74 @@ class MapsLeadScraper:
 
         return None
 
-    def execute_scraping_workflow(self) -> None:
-        listing_links = self.get_listing_links()
+    def parse(self) -> None:
+        listing_links = self.parse_listings()
 
         self.logger.log(
             message=f"Collected {len(listing_links)} listing URLs",
             category="INFO"
         )
 
-        self.scrape_all_listings(listing_links)
+        self.parse_listing_page(listing_links)
 
-    def scrape_all_listings(self, links: set[str]) -> None:
+    def parse_listings(self, threshold: int | None = None) -> set[str]:
+        feed = self.wait_for_element(
+            locator=(By.XPATH, self.selectors['results_feed']),
+            timeout=15
+        )
+
+        links: set[str] = set()
+
+        while threshold is None or len(links) < threshold:
+            initial_count = len(links)
+
+            try:
+                anchors = feed.find_elements(By.XPATH, self.selectors['listing_links'])
+
+                for anchor in anchors:
+                    try:
+                        listing_container = anchor.find_element(
+                            By.XPATH,
+                            self.selectors['listing_containers']
+                        )
+
+                        if self.is_sponsored(listing_container):
+                            continue
+
+                        href = anchor.get_attribute('href')
+                        if href and 'maps/place' in href:
+                            links.add(href)
+
+                    except Exception:
+                        continue
+
+                current_count = len(links)
+                self.logger.log(
+                    message=f"Collected {current_count} organic listing URLs",
+                    category="INFO"
+                )
+
+                if threshold is not None and current_count >= threshold:
+                    break
+
+                if current_count == initial_count:
+                    self.logger.log(
+                        message=f"No new links found.",
+                        category="WARNING"
+                    )
+
+                self.scroll_page(feed)
+
+            except Exception as e:
+                self.logger.log(
+                    message="Error during link collection",
+                    category="ERROR",
+                    exception=e
+                )
+
+        return links
+
+    def parse_listing_page(self, links: set[str]) -> None:
         for index, url in enumerate(links, start=1):
             listing_data = {"maps_url": url}
             max_retries = 3
@@ -317,78 +373,6 @@ class MapsLeadScraper:
                 "phone": "",
                 "website": ""
             }
-
-    def get_listing_links(self, threshold: int | None = None) -> set[str]:
-        feed = self.get_results_container()
-        links_xpath = self.selectors['listing_links']
-
-        self.driver.execute_script("arguments[0].scrollTop = 0", feed)
-        time.sleep(2)
-
-        links: set[str] = set()
-        stale_count = 0
-
-        while (threshold is None or len(links) < threshold) and stale_count < self.MAX_STALE:
-            initial_count = len(links)
-
-            try:
-                anchors = feed.find_elements(By.XPATH, links_xpath)
-
-                for anchor in anchors:
-                    try:
-                        listing_container = anchor.find_element(
-                            By.XPATH,
-                            self.selectors['listing_containers']
-                        )
-
-                        if self.is_sponsored(listing_container):
-                            continue
-
-                        href = anchor.get_attribute("href")
-                        if href and 'maps/place' in href:
-                            links.add(href)
-
-                    except Exception:
-                        continue
-
-                current_count = len(links)
-                self.logger.log(
-                    message=f"Collected {current_count} organic listing URLs",
-                    category="INFO"
-                )
-
-                if current_count >= threshold:
-                    break
-
-                if current_count == initial_count:
-                    stale_count += 1
-                    self.logger.log(
-                        message=f"No new links found. Stale count: {stale_count}/{self.MAX_STALE}",
-                        category="WARNING"
-                    )
-                else:
-                    stale_count = 0
-
-                self.scroll_page(feed)
-
-            except Exception as e:
-                self.logger.log(
-                    message="Error during link collection",
-                    category="ERROR",
-                    exception=e
-                )
-                stale_count += 1
-
-        return links
-
-    def get_results_container(self) -> WebElement:
-        feed_xpath = self.selectors['results_feed']
-        locator = (By.XPATH, feed_xpath)
-        self.logger.log(
-            message="Locating results container",
-            category='INFO'
-        )
-        return self.wait_for_element(locator, timeout=15)
 
     def scroll_page(self, feed: WebElement) -> None:
         self.logger.log(
