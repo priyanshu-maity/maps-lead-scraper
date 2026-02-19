@@ -108,7 +108,7 @@ class MapsLeadScraper:
             os.makedirs(profile_path, exist_ok=True)
 
             driver = Driver(
-                browser='edge',
+                browser='chrome',
                 uc=True,
                 headless=self.headless,
                 user_data_dir=profile_path,
@@ -178,52 +178,76 @@ class MapsLeadScraper:
         self.parse_listing_page(listing_links)
 
     def parse_listings(self, threshold: int | None = None) -> set[str]:
-        feed = self.wait_for_element(
-            locator=(By.XPATH, self.selectors['results_feed']),
-            timeout=15
+        feed = WebDriverWait(self.driver, timeout=15).until(
+            EC.presence_of_element_located((By.XPATH, self.selectors['results_feed']))
         )
 
-        links: set[str] = set()
+        listing_links: set[str] = set()
+        results_count: int = 0
 
-        while threshold is None or len(links) < threshold:
-            initial_count = len(links)
+        while threshold is None or len(listing_links) < threshold:
+            try:
+                listing_anchors = WebDriverWait(self.driver, timeout=5).until(
+                    lambda d: elems if len(elems := d.find_elements(By.XPATH, self.selectors[
+                        'listing_anchors'])) > results_count else False
+                )
+
+            except TimeoutException:
+                self.logger.log(
+                    message="Timeout waiting for listing anchors. Assuming no more results to load.",
+                    category='INFO'
+                )
+                break
 
             try:
-                anchors = feed.find_elements(By.XPATH, self.selectors['listing_links'])
+                if len(listing_anchors) == results_count:
+                    self.logger.log(
+                        message=f"No new listing anchors found after waiting.",
+                        category='INFO'
+                    )
+                    break
 
-                for anchor in anchors:
+                new_results_count = len(listing_anchors) - results_count
+                results_count += new_results_count
+                listing_anchors = listing_anchors[-new_results_count:]
+
+                for listing_anchor in listing_anchors:
                     try:
-                        listing_container = anchor.find_element(
+                        listing_container = listing_anchor.find_element(
                             By.XPATH,
-                            self.selectors['listing_containers']
+                            self.selectors['listing_container']
                         )
 
                         if self.is_sponsored(listing_container):
                             continue
 
-                        href = anchor.get_attribute('href')
+                        href = listing_anchor.get_attribute('href')
                         if href and 'maps/place' in href:
-                            links.add(href)
+                            listing_links.add(href)
 
-                    except Exception:
-                        continue
+                        if (threshold is not None) and (len(listing_links) >= threshold):
+                            break
 
-                current_count = len(links)
+                    except Exception as e:
+                        self.logger.log(
+                            message="Error processing a listing anchor",
+                            category="ERROR",
+                            exception=e
+                        )
+
+                current_count = len(listing_links)
                 self.logger.log(
                     message=f"Collected {current_count} organic listing URLs",
                     category="INFO"
                 )
 
-                if threshold is not None and current_count >= threshold:
+                if (threshold is not None) and (current_count >= threshold):
                     break
 
-                if current_count == initial_count:
-                    self.logger.log(
-                        message=f"No new links found.",
-                        category="WARNING"
-                    )
-
-                self.scroll_page(feed)
+                self.driver.execute_script(
+                    "arguments[0].scrollTop = arguments[0].scrollHeight",
+                    feed
+                )
 
             except Exception as e:
                 self.logger.log(
@@ -232,7 +256,7 @@ class MapsLeadScraper:
                     exception=e
                 )
 
-        return links
+        return listing_links
 
     def parse_listing_page(self, links: set[str]) -> None:
         for index, url in enumerate(links, start=1):
@@ -374,35 +398,6 @@ class MapsLeadScraper:
                 "website": ""
             }
 
-    def scroll_page(self, feed: WebElement) -> None:
-        self.logger.log(
-            message="Scrolling results feed...",
-            category="INFO"
-        )
-
-        previous_html = feed.get_attribute('innerHTML')
-
-        self.driver.execute_script(
-            "arguments[0].scrollTop = arguments[0].scrollHeight",
-            feed
-        )
-
-        time.sleep(2)
-
-        try:
-            WebDriverWait(self.driver, 15).until(
-                lambda d: feed.get_attribute('innerHTML') != previous_html
-            )
-            self.logger.log(
-                message="New listings loaded after scrolling.",
-                category="INFO"
-            )
-        except TimeoutException:
-            self.logger.log(
-                message="No new content loaded after scroll.",
-                category="WARNING"
-            )
-
     def is_sponsored(self, element: WebElement) -> bool:
         try:
             sponsored_elements = element.find_elements(
@@ -431,23 +426,6 @@ class MapsLeadScraper:
             )
             return default
 
-    def wait_for_element(self,
-                         locator: tuple,
-                         timeout: int = 10,
-                         condition=EC.presence_of_element_located) -> WebElement:
-        try:
-            element = WebDriverWait(self.driver, timeout).until(
-                condition(locator)
-            )
-            return element
-        except TimeoutException as e:
-            self.logger.log(
-                message=f"Timeout waiting for element: {locator}",
-                category='ERROR',
-                exception=e
-            )
-            raise
-
     @staticmethod
     def load_selectors() -> dict[str, str]:
         with open('selectors.yaml', 'r') as file:
@@ -457,7 +435,7 @@ class MapsLeadScraper:
 
 if __name__ == "__main__":
     scraper = MapsLeadScraper(
-        business_type="pet shop",
+        business_type="real estate agencies",
         location="New York City",
         sheet_id="137B0pNDLA6vIa6J7IHxlZoMmk8Pe1tKAfcHMprC-xrc",
         logs_path=Path("./logs"),
