@@ -1,4 +1,4 @@
-import re
+import inspect
 import os
 import time
 from datetime import datetime
@@ -38,9 +38,7 @@ class MapsLeadScraper:
             log_dir=logs_path
         )
         self.logger.log(
-            message=f"Initializing scraper with business_type={business_type}, "
-                    f"location={location}, sheet_id={sheet_id}, "
-                    f"headless={headless}",
+            message=f"Initializing scraper: {self._format_init_params(locals())}",
             category='INFO'
         )
 
@@ -425,6 +423,15 @@ class MapsLeadScraper:
                 category='WARNING'
             )
             return default
+
+    def _format_init_params(self, local_vars: dict) -> str:
+        sig = inspect.signature(self.__init__)
+        parameters = list(sig.parameters)[1:]
+
+        return ', '.join(
+            f'{name}={local_vars[name]}'
+            for name in parameters
+        )
 
     @staticmethod
     def load_selectors() -> dict[str, str]:
