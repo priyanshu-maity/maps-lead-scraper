@@ -1,12 +1,10 @@
 import inspect
 import os
 import time
-from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote_plus
 
 import yaml
-import pandas as pd
 
 from seleniumbase import Driver
 from selenium.webdriver.remote.webelement import WebElement
@@ -14,7 +12,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
-    ElementClickInterceptedException,
     TimeoutException,
     NoSuchElementException
 )
@@ -31,18 +28,6 @@ class MapsLeadScraper:
                  logs_path: Path,
                  headless: bool = True):
 
-        # Initialize logger
-        self.logger: Logging = Logging(
-            script_name='maps_lead_scraper',
-            color_logs=True,
-            log_dir=logs_path
-        )
-        self.logger.log(
-            message=f"Initializing scraper: {self._format_init_params(locals())}",
-            category='INFO'
-        )
-
-        # Core configuration
         self.url: str | None = None
         self.business_type: str = business_type
         self.location: str = location
@@ -51,14 +36,31 @@ class MapsLeadScraper:
 
         self.fields = ['business_name', 'business_type', 'address', 'phone', 'website', 'email', 'maps_url']
 
-        # Load selectors from YAML configuration
+        # Initialize logger
+        self.logger: Logging = Logging(
+            script_name='maps_lead_scraper',
+            color_logs=True,
+            log_dir=logs_path
+        )
+
+        # Load selectors
         self.selectors: dict[str, str] = self.load_selectors()
 
-        # Data storage
-        self.writer = GSheetBatchWriter('creds.json', self.sheet_id, headers=self.fields, dedupe_on=['maps_url'])
+        # Initialize Google Sheets writer
+        self.writer = GSheetBatchWriter(
+            creds_path='creds.json',
+            sheet_id=self.sheet_id,
+            headers=self.fields,
+            dedupe_on=['maps_url']
+        )
 
-        # Initialize driver
+        # Initialize Selenium driver
         self.driver = None
+
+        self.logger.log(
+            message=f'Initialized scraper: {self._format_init_params(locals())}',
+            category='INFO'
+        )
 
     def run(self):
         try:
