@@ -33,16 +33,29 @@ class MapsLeadScraper:
         self.business_type: str = business_type
         self.location: str = location
         self.sheet_id: str = sheet_id
+        self.logs_path: Path = logs_path
         self.headless: bool = headless
 
         self.fields = ['business_name', 'business_type', 'address', 'phone', 'website', 'email', 'maps_url']
+        self.init_params = locals()
 
+        self.logger: Logging | None = None
+        self.selectors: dict[str, str] | None = None
+        self.writer: GSheetBatchWriter | None = None
+        self.driver: WebDriver | None = None
+
+        self.setup()
+    
+    def setup(self):
         # Initialize logger
-        self.logger: Logging = Logging(
+        self.logger = Logging(
             script_name='maps_lead_scraper',
             color_logs=True,
-            log_dir=logs_path
+            log_dir=self.logs_path
         )
+
+        self.logger.log(message=f"Setting up scraper with parameters: {self._format_init_params(self.init_params)}",
+                        category='INFO')
 
         # Load selectors
         try:
@@ -101,7 +114,7 @@ class MapsLeadScraper:
             raise SystemExit("Stopping scraper due to driver initialization failure")
 
         self.logger.log(
-            message=f'Initialized scraper: {self._format_init_params(locals())}',
+            message="Setup complete, ready to run scraper",
             category='INFO'
         )
 
