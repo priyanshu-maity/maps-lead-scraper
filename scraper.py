@@ -7,6 +7,7 @@ from urllib.parse import quote_plus
 import yaml
 
 from seleniumbase import Driver
+from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait, Select
@@ -55,7 +56,7 @@ class MapsLeadScraper:
         )
 
         # Initialize Selenium driver
-        self.driver = None
+        self.driver = self.init_driver()
 
         self.logger.log(
             message=f'Initialized scraper: {self._format_init_params(locals())}',
@@ -65,7 +66,7 @@ class MapsLeadScraper:
     def run(self):
         try:
             self.build_search_url()
-            self.driver = self.get_driver()
+            self.get_driver()
             self.parse()
             self.writer.flush()
 
@@ -97,7 +98,7 @@ class MapsLeadScraper:
 
         return self.url
 
-    def get_driver(self):
+    def init_driver(self) -> WebDriver:
         try:
             self.logger.log(
                 message="Setting up SeleniumBase Driver",
@@ -127,6 +128,7 @@ class MapsLeadScraper:
                 category='INFO'
             )
 
+            return driver
         except Exception as e:
             self.logger.log(
                 message="Error while setting up SeleniumBase driver",
@@ -135,6 +137,7 @@ class MapsLeadScraper:
             )
             raise SystemExit("Stopping scraper due to driver setup failure")
 
+    def get_driver(self):
         self.logger.log(
             message=f"Fetching website: {self.url}",
             category='INFO'
@@ -143,12 +146,11 @@ class MapsLeadScraper:
         retries = 3
         while retries > 0:
             try:
-                driver.get(self.url)
+                self.driver.get(self.url)
                 self.logger.log(
                     message="Successfully fetched website",
                     category='INFO'
                 )
-                return driver
             except Exception as e:
                 retries -= 1
                 if retries > 0:
@@ -164,8 +166,6 @@ class MapsLeadScraper:
                         exception=e
                     )
                     raise SystemExit("Stopping scraper due to website fetch failure")
-
-        return None
 
     def parse(self) -> None:
         listing_links = self.parse_listings()
