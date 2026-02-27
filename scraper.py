@@ -201,6 +201,7 @@ class MapsLeadScraper:
                     message="Successfully fetched website",
                     category='INFO'
                 )
+                return
             except Exception as e:
                 retries -= 1
                 if retries > 0:
