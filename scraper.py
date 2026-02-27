@@ -45,18 +45,60 @@ class MapsLeadScraper:
         )
 
         # Load selectors
-        self.selectors: dict[str, str] = self.load_selectors()
+        try:
+            self.logger.log(message="Loading selectors",
+                            category='INFO')
+
+            self.selectors: dict[str, str] = self.load_selectors()
+
+            self.logger.log(message="Loaded selectors successfully",
+                            category='INFO')
+        except Exception as e:
+            self.logger.log(
+                message="Error loading selectors",
+                category='CRITICAL',
+                exception=e
+            )
+            raise SystemExit("Stopping scraper due to selector load failure")
 
         # Initialize Google Sheets writer
-        self.writer = GSheetBatchWriter(
-            creds_path='creds.json',
-            sheet_id=self.sheet_id,
-            headers=self.fields,
-            dedupe_on=['maps_url']
-        )
+        try:
+            self.logger.log(message="Initializing Google Sheets writer",
+                            category='INFO')
+
+            self.writer = GSheetBatchWriter(
+                creds_path='creds.json',
+                sheet_id=self.sheet_id,
+                headers=self.fields,
+                dedupe_on=['maps_url']
+            )
+
+            self.logger.log(message="Initialized Google Sheets writer successfully",
+                            category='INFO')
+        except Exception as e:
+            self.logger.log(
+                message="Error initializing Google Sheets writer",
+                category='CRITICAL',
+                exception=e
+            )
+            raise SystemExit("Stopping scraper due to writer initialization failure")
 
         # Initialize Selenium driver
-        self.driver = self.init_driver()
+        try:
+            self.logger.log(message="Initializing webdriver",
+                            category='INFO')
+
+            self.driver = self.init_driver()
+
+            self.logger.log(message="Initialized webdriver successfully",
+                            category='INFO')
+        except Exception as e:
+            self.logger.log(
+                message="Error initializing webdriver",
+                category='CRITICAL',
+                exception=e
+            )
+            raise SystemExit("Stopping scraper due to driver initialization failure")
 
         self.logger.log(
             message=f'Initialized scraper: {self._format_init_params(locals())}',
@@ -100,11 +142,6 @@ class MapsLeadScraper:
 
     def init_driver(self) -> WebDriver:
         try:
-            self.logger.log(
-                message="Setting up SeleniumBase Driver",
-                category='INFO'
-            )
-
             profile_path = os.path.join(os.getcwd(), 'chrome_profile')
             os.makedirs(profile_path, exist_ok=True)
 
