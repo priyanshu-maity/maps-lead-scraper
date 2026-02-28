@@ -120,7 +120,22 @@ class MapsLeadScraper:
 
     def run(self):
         try:
+            self.logger.log(message="Building search URL",
+                            category='INFO')
+
             self.build_search_url()
+
+            self.logger.log(message=f"Successfully built search URL: {self.url}",
+                            category='INFO')
+        except Exception as e:
+            self.logger.log(
+                message="Error building search URL",
+                category='CRITICAL',
+                exception=e
+            )
+            raise SystemExit("Stopping scraper due to URL build failure")
+
+        try:
             self.get_driver()
             self.parse()
             self.writer.flush()
@@ -141,17 +156,10 @@ class MapsLeadScraper:
                     category='INFO'
                 )
 
-    def build_search_url(self) -> str:
-        query = f"{self.business_type} in {self.location}"
+    def build_search_url(self):
+        query = f'{self.business_type} in {self.location}'
         encoded_query = quote_plus(query)
-        self.url = f"https://www.google.com/maps/search/{encoded_query}"
-
-        self.logger.log(
-            message=f"Built search URL: {self.url}",
-            category="DEBUG"
-        )
-
-        return self.url
+        self.url = f'https://www.google.com/maps/search/{encoded_query}'
 
     def init_driver(self) -> WebDriver:
         try:
