@@ -16,6 +16,7 @@ from selenium.common.exceptions import (
     TimeoutException,
     NoSuchElementException
 )
+from tenacity import retry
 
 from scraperlog import Logging
 from batch_writer import GSheetBatchWriter
@@ -136,7 +137,7 @@ class MapsLeadScraper:
             raise SystemExit("Stopping scraper due to URL build failure")
 
         try:
-            self.get_driver()
+            self.load_page(self.url)
             self.parse()
             self.writer.flush()
 
@@ -195,21 +196,21 @@ class MapsLeadScraper:
             )
             raise SystemExit("Stopping scraper due to driver setup failure")
 
-    def get_driver(self):
+    def load_page(self, url: str) -> bool:
         self.logger.log(
-            message=f"Fetching website: {self.url}",
+            message=f"Fetching website: {url}",
             category='INFO'
         )
 
         retries = 3
         while retries > 0:
             try:
-                self.driver.get(self.url)
+                self.driver.get(url)
                 self.logger.log(
                     message="Successfully fetched website",
                     category='INFO'
                 )
-                return
+                return True
             except Exception as e:
                 retries -= 1
                 if retries > 0:
@@ -224,7 +225,8 @@ class MapsLeadScraper:
                         category='CRITICAL',
                         exception=e
                     )
-                    raise SystemExit("Stopping scraper due to website fetch failure")
+                    raise False
+        return False
 
     def parse(self) -> None:
         listing_links = self.parse_listings()
