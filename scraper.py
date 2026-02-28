@@ -4,8 +4,6 @@ import time
 from pathlib import Path
 from urllib.parse import quote_plus
 
-import yaml
-
 from seleniumbase import Driver
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.remote.webelement import WebElement
@@ -14,9 +12,11 @@ from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
     TimeoutException,
-    NoSuchElementException
+    WebDriverException,
+    NoSuchElementException,
 )
-from tenacity import retry
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type
+import yaml
 
 from scraperlog import Logging
 from batch_writer import GSheetBatchWriter
@@ -137,7 +137,19 @@ class MapsLeadScraper:
             raise SystemExit("Stopping scraper due to URL build failure")
 
         try:
+            self.logger.log(message="Loading search results page",
+                            category='INFO')
+
             self.load_page(self.url)
+
+            self.logger.log(message="Loaded search results page successfully",
+                            category='INFO')
+        except Exception as e:
+            self.logger.log(message="Error loading search results page",
+                            category='CRITICAL', exception=e)
+            raise SystemExit("Stopping scraper due to page load failure")
+
+        try:
             self.parse()
             self.writer.flush()
 
@@ -196,37 +208,27 @@ class MapsLeadScraper:
             )
             raise SystemExit("Stopping scraper due to driver setup failure")
 
-    def load_page(self, url: str) -> bool:
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential_jitter(initial=2, max=15),
+        retry=retry_if_exception_type((TimeoutException, WebDriverException)),
+        reraise=True,
+    )
+    def load_page(self, url: str):
         self.logger.log(
-            message=f"Fetching website: {url}",
+            message=f"Fetching URL: {url}",
             category='INFO'
         )
 
-        retries = 3
-        while retries > 0:
-            try:
-                self.driver.get(url)
-                self.logger.log(
-                    message="Successfully fetched website",
-                    category='INFO'
-                )
-                return True
-            except Exception as e:
-                retries -= 1
-                if retries > 0:
-                    self.logger.log(
-                        message=f"Error while fetching website. Retrying... ({retries} attempts left)",
-                        category='ERROR',
-                        exception=e
-                    )
-                else:
-                    self.logger.log(
-                        message="Error fetching website. Ran out of retries.",
-                        category='CRITICAL',
-                        exception=e
-                    )
-                    raise False
-        return False
+        try:
+            self.driver.get(url)
+        except Exception as e:
+            self.logger.log(
+                message="Error while fetching website. Retrying...",
+                category='ERROR',
+                exception=e
+            )
+            raise
 
     def parse(self) -> None:
         listing_links = self.parse_listings()
