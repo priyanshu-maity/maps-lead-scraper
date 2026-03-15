@@ -15,7 +15,7 @@ from selenium.common.exceptions import (
     WebDriverException,
     NoSuchElementException,
 )
-from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type, RetryCallState
 import yaml
 
 from scraperlog import Logging
@@ -27,7 +27,6 @@ class MapsLeadScraper:
                  business_type: str,
                  location: str,
                  sheet_id: str,
-                 logs_path: Path,
                  headless: bool = True):
 
         self.url: str | None = None
@@ -40,7 +39,7 @@ class MapsLeadScraper:
         self.fields = ['business_name', 'business_type', 'address', 'phone', 'website', 'email', 'maps_url']
         self.init_params = locals()
 
-        self.logger: Logging | None = None
+        self.logger: Logging = logger
         self.selectors: dict[str, str] | None = None
         self.writer: GSheetBatchWriter | None = None
         self.driver: WebDriver | None = None
@@ -48,13 +47,6 @@ class MapsLeadScraper:
         self.setup()
     
     def setup(self):
-        # Initialize logger
-        self.logger = Logging(
-            script_name='maps_lead_scraper',
-            color_logs=True,
-            log_dir=self.logs_path
-        )
-
         self.logger.log(message=f"Setting up scraper with parameters: {self._format_init_params(self.init_params)}",
                         category='INFO')
 
@@ -506,11 +498,16 @@ class MapsLeadScraper:
 
 
 if __name__ == "__main__":
+    logger = Logging(
+        script_name='maps_lead_scraper',
+        color_logs=True,
+        log_dir=Path('./logs')
+    )
+
     scraper = MapsLeadScraper(
         business_type="real estate agencies",
         location="New York City",
         sheet_id="137B0pNDLA6vIa6J7IHxlZoMmk8Pe1tKAfcHMprC-xrc",
-        logs_path=Path("./logs"),
         headless=False
     )
 
