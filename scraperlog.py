@@ -43,7 +43,7 @@ class Logging:
         self.log_thread.start()
         atexit.register(self._graceful_shutdown)
 
-    def log(self, message: str, category: str = 'DEBUG', exception: Exception | None = None, tb: str | None = None):
+    def log(self, message: str, category: str = 'DEBUG', exception: Exception | None = None):
         category: str = category.upper()
         if category not in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']:
             raise ValueError(f"{category} is not a supported category. Choose from ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'].")
@@ -51,7 +51,11 @@ class Logging:
         timestamp: str = self._get_dwt()
         if exception:
             exc_type: str = type(exception).__name__
-            tb: str = traceback.format_exc().strip() if tb is None else tb
+            tb: str = ''.join(traceback.format_exception(
+                type(exception),
+                exception,
+                exception.__traceback__
+            ))
             tb = textwrap.indent(tb, ' ' * 8)
             log_text: str = f"[{timestamp}] [{self.script_name}] [{category}][{exc_type}] {message}\n\n{tb}"
         else:
