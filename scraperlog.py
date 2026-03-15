@@ -1,6 +1,7 @@
 from collections import deque
 from datetime import datetime
 from pathlib import Path
+import textwrap
 import threading
 import traceback
 import time
@@ -51,7 +52,8 @@ class Logging:
         if exception:
             exc_type: str = type(exception).__name__
             tb: str = traceback.format_exc().strip() if tb is None else tb
-            log_text: str = f"[{timestamp}] [{self.script_name}] [{category}][{exc_type}] {message} ===> {tb}"
+            tb = textwrap.indent(tb, ' ' * 8)
+            log_text: str = f"[{timestamp}] [{self.script_name}] [{category}][{exc_type}] {message}\n{tb}"
         else:
             log_text: str = f"[{timestamp}] [{self.script_name}] [{category}] {message}"
 
