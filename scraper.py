@@ -23,6 +23,8 @@ from batch_writer import GSheetBatchWriter
 
 
 class MapsLeadScraper:
+    MAX_ATTEMPTS = 3
+
     def __init__(self,
                  business_type: str,
                  location: str,
@@ -33,7 +35,6 @@ class MapsLeadScraper:
         self.business_type: str = business_type
         self.location: str = location
         self.sheet_id: str = sheet_id
-        self.logs_path: Path = logs_path
         self.headless: bool = headless
 
         self.fields = ['business_name', 'business_type', 'address', 'phone', 'website', 'email', 'maps_url']
@@ -201,26 +202,14 @@ class MapsLeadScraper:
             raise SystemExit("Stopping scraper due to driver setup failure")
 
     @retry(
-        stop=stop_after_attempt(3),
+        stop=stop_after_attempt(MAX_ATTEMPTS),
         wait=wait_exponential_jitter(initial=2, max=15),
         retry=retry_if_exception_type((TimeoutException, WebDriverException)),
+        before_sleep=lambda rs: MapsLeadScraper.log_before_retry_sleep(rs, 'loading page'),
         reraise=True,
     )
     def load_page(self, url: str):
-        self.logger.log(
-            message=f"Fetching URL: {url}",
-            category='INFO'
-        )
-
-        try:
-            self.driver.get(url)
-        except Exception as e:
-            self.logger.log(
-                message="Error while fetching website. Retrying...",
-                category='ERROR',
-                exception=e
-            )
-            raise
+        self.driver.get(url)
 
     def parse(self) -> None:
         listing_links = self.parse_listings()
@@ -488,6 +477,23 @@ class MapsLeadScraper:
         return ', '.join(
             f'{name}={local_vars[name]}'
             for name in parameters
+        )
+
+    @staticmethod
+    def log_before_retry_sleep(retry_state: RetryCallState, action: str):
+        attempts_used = retry_state.attempt_number
+        attempts_left = MapsLeadScraper.MAX_ATTEMPTS - attempts_used
+
+        next_sleep = retry_state.next_action.sleep if retry_state.next_action else None
+        wait_msg = f" | next retry in {next_sleep:.1f}s" if next_sleep else ''
+
+        logger.log(
+            message=(
+                f"Error while {action}. "
+                f"Retrying... ({attempts_left} attempts left){wait_msg}"
+            ),
+            category='ERROR',
+            exception=retry_state.outcome.exception() if retry_state.outcome else None,
         )
 
     @staticmethod
