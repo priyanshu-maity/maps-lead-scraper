@@ -24,11 +24,11 @@ class Logging:
 
         if self.color_logs:
             self.LOG_COLORS: dict[str, colorama.ansi] = {
-                "DEBUG": Fore.CYAN + Style.DIM,
-                "INFO": Fore.WHITE + Style.BRIGHT,
-                "WARNING": Fore.YELLOW + Style.BRIGHT,
-                "ERROR": Fore.RED + Style.BRIGHT,
-                "CRITICAL": Back.RED + Fore.WHITE + Style.BRIGHT
+                "DEBUG": Fore.LIGHTBLACK_EX + Style.DIM,
+                "INFO": Fore.LIGHTBLUE_EX + Style.NORMAL,
+                "WARNING": Fore.LIGHTYELLOW_EX + Style.BRIGHT,
+                "ERROR": Fore.LIGHTRED_EX + Style.BRIGHT,
+                "CRITICAL": Fore.MAGENTA + Style.BRIGHT
             }
             colorama.init()
 
@@ -53,7 +53,7 @@ class Logging:
             exc_type: str = type(exception).__name__
             tb: str = traceback.format_exc().strip() if tb is None else tb
             tb = textwrap.indent(tb, ' ' * 8)
-            log_text: str = f"[{timestamp}] [{self.script_name}] [{category}][{exc_type}] {message}\n{tb}"
+            log_text: str = f"[{timestamp}] [{self.script_name}] [{category}][{exc_type}] {message}\n\n{tb}"
         else:
             log_text: str = f"[{timestamp}] [{self.script_name}] [{category}] {message}"
 
