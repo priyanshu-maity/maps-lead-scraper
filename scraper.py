@@ -215,23 +215,29 @@ class MapsLeadScraper:
         listing_links = self.parse_listings()
 
         self.logger.log(
-            message=f"Collected {len(listing_links)} listing URLs",
-            category="INFO"
+            message=f"Finished collecting listing URLs. Starting to parse {len(listing_links)} listings",
+            category='INFO'
         )
 
         self.parse_listing_page(listing_links)
 
     def parse_listings(self, threshold: int | None = None) -> set[str]:
-        feed = WebDriverWait(self.driver, timeout=15).until(
-            EC.presence_of_element_located((By.XPATH, self.selectors['results_feed']))
-        )
+        try:
+            feed = WebDriverWait(self.driver, timeout=15).until(
+                EC.presence_of_element_located((By.XPATH, self.selectors['results_feed']))
+            )
+        except TimeoutException:
+            self.logger.log(message="Timeout waiting for results feed. Cannot collect listings.",
+                            category='CRITICAL')
+            raise SystemExit("Stopping scraper due to missing results feed")
 
         listing_links: set[str] = set()
         results_count: int = 0
 
         while threshold is None or len(listing_links) < threshold:
             try:
-                listing_anchors = WebDriverWait(self.driver, timeout=5).until(
+                self.logger.log(message="Loading new listings...")
+                listing_anchors = WebDriverWait(self.driver, timeout=10).until(
                     lambda d: elems if len(elems := d.find_elements(By.XPATH, self.selectors[
                         'listing_anchors'])) > results_count else False
                 )
@@ -255,39 +261,48 @@ class MapsLeadScraper:
                 results_count += new_results_count
                 listing_anchors = listing_anchors[-new_results_count:]
 
-                for listing_anchor in listing_anchors:
+                self.logger.log(message=f"Found {len(listing_anchors)} new listing anchors (total found: {results_count})")
+
+                for idx, listing_anchor in enumerate(listing_anchors):
                     try:
+                        self.logger.log(message=f"Processing listing anchor {idx + 1}/{len(listing_anchors)}")
+
                         listing_container = listing_anchor.find_element(
                             By.XPATH,
                             self.selectors['listing_container']
                         )
 
                         if self.is_sponsored(listing_container):
+                            self.logger.log(message="Listing is sponsored, skipping...")
                             continue
 
                         href = listing_anchor.get_attribute('href')
                         if href and 'maps/place' in href:
                             listing_links.add(href)
+                            self.logger.log(message=f"Successfully extracted listing URL: {href}")
 
                         if (threshold is not None) and (len(listing_links) >= threshold):
                             break
 
                     except Exception as e:
                         self.logger.log(
-                            message="Error processing a listing anchor",
-                            category="ERROR",
+                            message="Error processing listing anchor",
+                            category='ERROR',
                             exception=e
                         )
 
                 current_count = len(listing_links)
                 self.logger.log(
-                    message=f"Collected {current_count} organic listing URLs",
-                    category="INFO"
+                    message=f"Collected {current_count} listing URLs",
+                    category='INFO'
                 )
 
                 if (threshold is not None) and (current_count >= threshold):
+                    self.logger.log(message=f"Reached threshold of {threshold} listing URLs",
+                                    category='INFO')
                     break
 
+                self.logger.log(message="Scrolling feed to load more listings...")
                 self.driver.execute_script(
                     "arguments[0].scrollTop = arguments[0].scrollHeight",
                     feed
@@ -295,8 +310,8 @@ class MapsLeadScraper:
 
             except Exception as e:
                 self.logger.log(
-                    message="Error during link collection",
-                    category="ERROR",
+                    message="Error during listing link collection",
+                    category='ERROR',
                     exception=e
                 )
 
